@@ -1,5 +1,9 @@
-let numberOfShapes = 15;
-let speed: p5.Element;
+let bird: Bird;
+let obstacles: Obstacle[] = [];
+let pipesCleared: number = 0;
+let obstaclesHit: number;
+let playQuality: number;
+
 
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
@@ -8,22 +12,48 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
 
     // SETUP SOME OPTIONS
-    rectMode(CENTER).noFill().frameRate(30);
+    frameRate(50);
 
-    // SPEED SLIDER
-    speed = createSlider(0, 15, 3, 1);
-    speed.position(10, 10);
-    speed.style("width", "80px");
+    bird = new Bird()
+    pipesCleared = 0
+    obstaclesHit = 0
+    playQuality = 10
+    obstacles.push(new Obstacle())
 }
-
-
 
 function draw() {
-    background(0);
-    fill(255);
-    text('Hello world', 10, 50);
+    clear()
+    fill(0, 0, 255)
+    textSize(20)
+    textFont("Helvetica")
+    text('Obstacles Cleared: ' + pipesCleared, 20, 20)
+    text('Obstacle Damage: ' + obstaclesHit, 20, 40)
+    text('Play Quality: ' + String(1 + (pipesCleared / obstaclesHit) || 4).substring(0, 4) + '/5', 20, 60)
+    bird.show()
+    bird.update()
+    // background('#FF0000')
+
+    if (frameCount % 100 == 0) {
+        obstacles.push(new Obstacle())
+    }
+
+    for (var i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].show()
+        obstacles[i].update()
+
+        if (obstacles[i].hits(bird)) {
+            obstaclesHit++
+        }
+
+        if (obstacles[i].offscreen()) {
+            obstacles.splice(i, 1)
+            pipesCleared++
+        }
+    }
 }
 
-function windowResized() {
-    createCanvas(windowWidth, windowHeight);
+function keyPressed() {
+    if (key === " ") {
+        bird.goUp()
+    }
 }
