@@ -5,10 +5,23 @@ class Bird {
     gravity = 0.6;
     lift = -16;
     velocity = 0;
+    isAlive = true;
+
 
     show() {
-        fill(255)
+        this.isAlive ? fill(0,20,220) : fill(255, 0 ,0);
         ellipse(this.x, this.y, 32, 32)
+    }
+
+    hits(obstacle: Obstacle) {
+        if (this.y < obstacle.gapStart || this.y > obstacle.gapStart + obstacle.gapLength) {
+            if (this.x > obstacle.x && this.x < obstacle.x + obstacle.w) {
+                this.isAlive = false;
+                console.log('dead');
+                return false
+            }
+        }
+        return true
     }
 
     goUp() {

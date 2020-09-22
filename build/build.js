@@ -1,4 +1,4 @@
-var bird;
+var birds = [];
 var obstacles = [];
 var pipesCleared = 0;
 var obstaclesHit;
@@ -7,7 +7,10 @@ function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
     createCanvas(windowWidth, windowHeight);
     frameRate(50);
-    bird = new Bird();
+    birds.push(new Bird());
+    birds.push(new Bird());
+    birds.push(new Bird());
+    birds.push(new Bird());
     pipesCleared = 0;
     obstaclesHit = 0;
     playQuality = 10;
@@ -21,26 +24,25 @@ function draw() {
     text('Obstacles Cleared: ' + pipesCleared, 20, 20);
     text('Obstacle Damage: ' + obstaclesHit, 20, 40);
     text('Play Quality: ' + String(1 + (pipesCleared / obstaclesHit) || 4).substring(0, 4) + '/5', 20, 60);
-    bird.show();
-    bird.update();
     if (frameCount % 100 == 0) {
         obstacles.push(new Obstacle());
     }
-    for (var i = obstacles.length - 1; i >= 0; i--) {
+    for (var z = 0; z < birds.length; z += 1) {
+        birds[z].show();
+        birds[z].update();
+        for (var i = obstacles.length - 1; i >= 0; i -= 1) {
+            var isAlive = birds[z].hits(obstacles[i]);
+        }
+    }
+    birds = birds.filter(function (bird) { return bird.isAlive; });
+    for (var i = obstacles.length - 1; i >= 0; i -= 1) {
         obstacles[i].show();
         obstacles[i].update();
-        if (obstacles[i].hits(bird)) {
-            obstaclesHit++;
-        }
-        if (obstacles[i].offscreen()) {
-            obstacles.splice(i, 1);
-            pipesCleared++;
-        }
     }
 }
 function keyPressed() {
     if (key === " ") {
-        bird.goUp();
+        birds[0].goUp();
     }
 }
 var Bird = (function () {
@@ -50,10 +52,21 @@ var Bird = (function () {
         this.gravity = 0.6;
         this.lift = -16;
         this.velocity = 0;
+        this.isAlive = true;
     }
     Bird.prototype.show = function () {
-        fill(255);
+        this.isAlive ? fill(0, 20, 220) : fill(255, 0, 0);
         ellipse(this.x, this.y, 32, 32);
+    };
+    Bird.prototype.hits = function (obstacle) {
+        if (this.y < obstacle.gapStart || this.y > obstacle.gapStart + obstacle.gapLength) {
+            if (this.x > obstacle.x && this.x < obstacle.x + obstacle.w) {
+                this.isAlive = false;
+                console.log('dead');
+                return false;
+            }
+        }
+        return true;
     };
     Bird.prototype.goUp = function () {
         this.velocity += this.lift;
