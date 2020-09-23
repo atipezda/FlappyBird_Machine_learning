@@ -1,10 +1,6 @@
 let birds: Bird[] = [];
 let obstacles: Obstacle[] = [];
-let pipesCleared: number = 0;
-let obstaclesHit: number;
-let playQuality: number;
-
-
+let score = 0;
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
 
@@ -15,12 +11,7 @@ function setup() {
     frameRate(50);
 
     birds.push(new Bird());
-    birds.push(new Bird());
-    birds.push(new Bird());
-    birds.push(new Bird());
-    pipesCleared = 0
-    obstaclesHit = 0
-    playQuality = 10
+    console.log(birds.length)
     obstacles.push(new Obstacle())
 }
 
@@ -29,12 +20,7 @@ function draw() {
     fill(0, 0, 255)
     textSize(20)
     textFont("Helvetica")
-    text('Obstacles Cleared: ' + pipesCleared, 20, 20)
-    text('Obstacle Damage: ' + obstaclesHit, 20, 40)
-    text('Play Quality: ' + String(1 + (pipesCleared / obstaclesHit) || 4).substring(0, 4) + '/5', 20, 60);
-    // bird.show()
-    // bird.update()
-    // background('#FF0000')
+    text('score: ' + score, 20, 20)
 
     if (frameCount % 100 == 0) {
         obstacles.push(new Obstacle())
@@ -46,6 +32,8 @@ function draw() {
         for (let i = obstacles.length - 1; i >= 0; i-=1) {
             let isAlive = birds[z].hits(obstacles[i]);
         }
+        const nextObstacle = obstacles[0].passesBird() ? obstacles[1] : obstacles[0];
+        birds[z].updateNextObstacle(nextObstacle);
     }
 
     birds = birds.filter(bird => bird.isAlive);
@@ -57,10 +45,13 @@ function draw() {
         //     obstaclesHit++
         // }
         //
-        // if (obstacles[i].offscreen()) {
-        //     obstacles.splice(i, 1)
-        //     pipesCleared++
-        // }
+        if (!obstacles[i].passed && obstacles[i].passesBird()) {
+
+            score++;
+        }
+        if(obstacles[i].isOffScreen()){
+            obstacles.splice(i, 1)
+        }
     }
 }
 
