@@ -11,7 +11,18 @@ class Bird {
     upperDist = 0;
     lowerDist = 0;
     bottomDist = 0;
-    debug = true;
+    debug = false;
+    brain: NeuralNetwork;
+
+    constructor(brain: NeuralNetwork = undefined) {
+        if(brain){
+            this.brain = brain.copy();
+        }else{
+            this.brain = new NeuralNetwork(5,8,2);
+        }
+
+    }
+
 
     show() {
         this.calcDistances();
@@ -87,6 +98,18 @@ class Bird {
             this.velocity = 0
         }
 
+    }
+    think(){
+        let inputs = [];
+        inputs[0] = this.y / height;
+        inputs[1] = this.topNextObstacle.y / height;
+        inputs[2] = this.bottomNextObstacle.y / height;
+        inputs[3] = this.bottomNextObstacle.x / width;
+        inputs[4] = this.velocity/10;
+        let output = this.brain.predict(inputs);
+        if(output[0] > output[1]){
+            this.goUp();
+        }
     }
 
     updateNextObstacle(obstacle: Obstacle) {

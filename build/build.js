@@ -1,12 +1,15 @@
 var birds = [];
 var obstacles = [];
 var score = 0;
+var birdsAmount = 500;
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
+    tf.setBackend('cpu');
     createCanvas(windowWidth, windowHeight);
     frameRate(50);
-    birds.push(new Bird());
-    console.log(birds.length);
+    for (var i = 0; i < birdsAmount; i++) {
+        birds.push(new Bird());
+    }
     obstacles.push(new Obstacle());
 }
 function draw() {
@@ -18,16 +21,6 @@ function draw() {
     if (frameCount % 100 == 0) {
         obstacles.push(new Obstacle());
     }
-    for (var z = 0; z < birds.length; z += 1) {
-        birds[z].show();
-        birds[z].update();
-        for (var i = obstacles.length - 1; i >= 0; i -= 1) {
-            var isAlive = birds[z].hits(obstacles[i]);
-        }
-        var nextObstacle = obstacles[0].passesBird() ? obstacles[1] : obstacles[0];
-        birds[z].updateNextObstacle(nextObstacle);
-    }
-    birds = birds.filter(function (bird) { return bird.isAlive; });
     for (var i = obstacles.length - 1; i >= 0; i -= 1) {
         obstacles[i].show();
         obstacles[i].update();
@@ -38,6 +31,17 @@ function draw() {
             obstacles.splice(i, 1);
         }
     }
+    for (var z = 0; z < birds.length; z += 1) {
+        for (var i = obstacles.length - 1; i >= 0; i -= 1) {
+            var isAlive = birds[z].hits(obstacles[i]);
+        }
+        var nextObstacle = obstacles[0].passesBird() ? obstacles[1] : obstacles[0];
+        birds[z].updateNextObstacle(nextObstacle);
+        birds[z].think();
+        birds[z].show();
+        birds[z].update();
+    }
+    birds = birds.filter(function (bird) { return bird.isAlive; });
 }
 function keyPressed() {
     if (key === " ") {
@@ -45,7 +49,8 @@ function keyPressed() {
     }
 }
 var Bird = (function () {
-    function Bird() {
+    function Bird(brain) {
+        if (brain === void 0) { brain = undefined; }
         this.y = height / 2;
         this.x = 64;
         this.gravity = 0.6;
@@ -57,7 +62,13 @@ var Bird = (function () {
         this.upperDist = 0;
         this.lowerDist = 0;
         this.bottomDist = 0;
-        this.debug = true;
+        this.debug = false;
+        if (brain) {
+            this.brain = brain.copy();
+        }
+        else {
+            this.brain = new NeuralNetwork(5, 8, 2);
+        }
     }
     Bird.prototype.show = function () {
         this.calcDistances();
@@ -120,6 +131,18 @@ var Bird = (function () {
             this.velocity = 0;
         }
     };
+    Bird.prototype.think = function () {
+        var inputs = [];
+        inputs[0] = this.y / height;
+        inputs[1] = this.topNextObstacle.y / height;
+        inputs[2] = this.bottomNextObstacle.y / height;
+        inputs[3] = this.bottomNextObstacle.x / width;
+        inputs[4] = this.velocity / 10;
+        var output = this.brain.predict(inputs);
+        if (output[0] > output[1]) {
+            this.goUp();
+        }
+    };
     Bird.prototype.updateNextObstacle = function (obstacle) {
         this.topNextObstacle = obstacle.upperVertex;
         this.bottomNextObstacle = obstacle.lowerVertex;
@@ -176,5 +199,37 @@ var Obstacle = (function () {
         return false;
     };
     return Obstacle;
+}());
+var NeuralNetwork = (function () {
+    function NeuralNetwork(inputs, hidden, outputs) {
+        this.inputNodes = inputs;
+        this.hiddenNodes = hidden;
+        this.outputNodes = outputs;
+        this.createModel();
+    }
+    NeuralNetwork.prototype.copy = function () {
+        var modelCopy = this.createModel();
+        var weights = this.model.getWeights();
+    };
+    NeuralNetwork.prototype.createModel = function () {
+        this.model = tf.sequential();
+        var hidden = tf.layers.dense({
+            units: this.hiddenNodes,
+            inputDim: this.inputNodes,
+            activation: 'sigmoid'
+        });
+        this.model.add(hidden);
+        var output = tf.layers.dense({
+            units: this.outputNodes,
+            activation: 'softmax'
+        });
+        this.model.add(output);
+    };
+    NeuralNetwork.prototype.predict = function (inputs) {
+        var xs = tf.tensor2d([inputs]);
+        var ys = this.model.predict(xs);
+        return ys.dataSync();
+    };
+    return NeuralNetwork;
 }());
 //# sourceMappingURL=../sketch/sketch/build.js.map
