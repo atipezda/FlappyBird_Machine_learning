@@ -45,16 +45,16 @@ function draw() {
         }
     }
 
+    const nextObstacle = obstacles[0].passesBird() ? obstacles[1] : obstacles[0];
     for (let z=0; z<birds.length; z+=1){
 
         for (let i = obstacles.length - 1; i >= 0; i-=1) {
             let isAlive = birds[z].hits(obstacles[i]);
         }
-        const nextObstacle = obstacles[0].passesBird() ? obstacles[1] : obstacles[0];
         birds[z].updateNextObstacle(nextObstacle);
         birds[z].think();
-        birds[z].show();
         birds[z].update();
+        birds[z].show();
     }
 
     birds = birds.filter(bird => bird.isAlive);

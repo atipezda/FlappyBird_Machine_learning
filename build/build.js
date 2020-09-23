@@ -31,15 +31,15 @@ function draw() {
             obstacles.splice(i, 1);
         }
     }
+    var nextObstacle = obstacles[0].passesBird() ? obstacles[1] : obstacles[0];
     for (var z = 0; z < birds.length; z += 1) {
         for (var i = obstacles.length - 1; i >= 0; i -= 1) {
             var isAlive = birds[z].hits(obstacles[i]);
         }
-        var nextObstacle = obstacles[0].passesBird() ? obstacles[1] : obstacles[0];
         birds[z].updateNextObstacle(nextObstacle);
         birds[z].think();
-        birds[z].show();
         birds[z].update();
+        birds[z].show();
     }
     birds = birds.filter(function (bird) { return bird.isAlive; });
 }
