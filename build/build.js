@@ -73,7 +73,8 @@ var Bird = (function () {
     Bird.prototype.show = function () {
         this.calcDistances();
         this.debug && this.drawDistances();
-        this.isAlive ? fill(0, 20, 220) : fill(255, 0, 0);
+        stroke(255);
+        fill(150, 50);
         ellipse(this.x, this.y, 32, 32);
     };
     Bird.prototype.calcDistances = function () {
@@ -149,6 +150,38 @@ var Bird = (function () {
     };
     return Bird;
 }());
+var NeuralNetwork = (function () {
+    function NeuralNetwork(inputs, hidden, outputs) {
+        this.inputNodes = inputs;
+        this.hiddenNodes = hidden;
+        this.outputNodes = outputs;
+        this.createModel();
+    }
+    NeuralNetwork.prototype.copy = function () {
+        var modelCopy = this.createModel();
+        var weights = this.model.getWeights();
+    };
+    NeuralNetwork.prototype.createModel = function () {
+        this.model = tf.sequential();
+        var hidden = tf.layers.dense({
+            units: this.hiddenNodes,
+            inputDim: this.inputNodes,
+            activation: 'sigmoid'
+        });
+        this.model.add(hidden);
+        var output = tf.layers.dense({
+            units: this.outputNodes,
+            activation: 'softmax'
+        });
+        this.model.add(output);
+    };
+    NeuralNetwork.prototype.predict = function (inputs) {
+        var xs = tf.tensor2d([inputs]);
+        var ys = this.model.predict(xs);
+        return ys.dataSync();
+    };
+    return NeuralNetwork;
+}());
 var Obstacle = (function () {
     function Obstacle() {
         this.x = width;
@@ -199,37 +232,5 @@ var Obstacle = (function () {
         return false;
     };
     return Obstacle;
-}());
-var NeuralNetwork = (function () {
-    function NeuralNetwork(inputs, hidden, outputs) {
-        this.inputNodes = inputs;
-        this.hiddenNodes = hidden;
-        this.outputNodes = outputs;
-        this.createModel();
-    }
-    NeuralNetwork.prototype.copy = function () {
-        var modelCopy = this.createModel();
-        var weights = this.model.getWeights();
-    };
-    NeuralNetwork.prototype.createModel = function () {
-        this.model = tf.sequential();
-        var hidden = tf.layers.dense({
-            units: this.hiddenNodes,
-            inputDim: this.inputNodes,
-            activation: 'sigmoid'
-        });
-        this.model.add(hidden);
-        var output = tf.layers.dense({
-            units: this.outputNodes,
-            activation: 'softmax'
-        });
-        this.model.add(output);
-    };
-    NeuralNetwork.prototype.predict = function (inputs) {
-        var xs = tf.tensor2d([inputs]);
-        var ys = this.model.predict(xs);
-        return ys.dataSync();
-    };
-    return NeuralNetwork;
 }());
 //# sourceMappingURL=../sketch/sketch/build.js.map

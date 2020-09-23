@@ -27,7 +27,8 @@ class Bird {
     show() {
         this.calcDistances();
         this.debug && this.drawDistances();
-        this.isAlive ? fill(0, 20, 220) : fill(255, 0, 0);
+        stroke(255);
+        fill(150,50);
         ellipse(this.x, this.y, 32, 32)
     }
 
