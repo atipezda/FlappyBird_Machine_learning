@@ -1,7 +1,11 @@
 var birds = [];
 var obstacles = [];
 var score = 0;
-var birdsAmount = 500;
+var savedBirds = [];
+var birdsAmount = 250;
+var counter = 0;
+var gen = 1;
+var best = 0;
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
     tf.setBackend('cpu');
@@ -10,20 +14,22 @@ function setup() {
     for (var i = 0; i < birdsAmount; i++) {
         birds.push(new Bird());
     }
-    obstacles.push(new Obstacle());
 }
 function draw() {
     clear();
     fill(0, 0, 255);
     textSize(20);
     textFont("Helvetica");
-    text('score: ' + score, 20, 20);
-    if (frameCount % 100 == 0) {
+    text('SCORE: ' + score, 20, 20);
+    text('BEST: ' + (best < score ? score : best), 20, 50);
+    text('ALIVE: ' + birds.length, 20, 80);
+    text('GEN: ' + gen, 20, 110);
+    if (counter % 100 == 0) {
         obstacles.push(new Obstacle());
     }
     for (var i = obstacles.length - 1; i >= 0; i -= 1) {
-        obstacles[i].show();
         obstacles[i].update();
+        obstacles[i].show();
         if (!obstacles[i].passed && obstacles[i].passesBird()) {
             score++;
         }
@@ -34,27 +40,41 @@ function draw() {
     var nextObstacle = obstacles[0].passesBird() ? obstacles[1] : obstacles[0];
     for (var z = 0; z < birds.length; z += 1) {
         for (var i = obstacles.length - 1; i >= 0; i -= 1) {
-            var isAlive = birds[z].hits(obstacles[i]);
+            birds[z].hits(obstacles[i]);
         }
+        birds[z].update();
         birds[z].updateNextObstacle(nextObstacle);
         birds[z].think();
-        birds[z].update();
         birds[z].show();
     }
-    birds = birds.filter(function (bird) { return bird.isAlive; });
-}
-function keyPressed() {
-    if (key === " ") {
-        birds[0].goUp();
+    birds = birds.filter(function (bird) {
+        if (bird.isAlive) {
+            return true;
+        }
+        else {
+            savedBirds.push(bird);
+            return false;
+        }
+    });
+    if (birds.length === 0 || score >= 100) {
+        console.log('next gen');
+        obstacles = [];
+        obstacles.push(new Obstacle());
+        best = score > best ? score : best;
+        score = 0;
+        counter = 0;
+        nextGeneration();
+        gen++;
     }
+    counter++;
 }
 var Bird = (function () {
     function Bird(brain) {
         if (brain === void 0) { brain = undefined; }
         this.y = height / 2;
         this.x = 64;
-        this.gravity = 0.6;
-        this.lift = -19;
+        this.gravity = 0.8;
+        this.lift = -12;
         this.velocity = 0;
         this.isAlive = true;
         this.topNextObstacle = { x: 0, y: 0 };
@@ -63,10 +83,13 @@ var Bird = (function () {
         this.lowerDist = 0;
         this.bottomDist = 0;
         this.debug = false;
+        this.score = 0;
+        this.fitness = 0;
         if (brain) {
             this.brain = brain.copy();
         }
         else {
+            console.log('new brain');
             this.brain = new NeuralNetwork(5, 8, 2);
         }
     }
@@ -76,6 +99,9 @@ var Bird = (function () {
         stroke(255);
         fill(150, 50);
         ellipse(this.x, this.y, 32, 32);
+    };
+    Bird.prototype.mutate = function () {
+        this.brain.mutate(0.03);
     };
     Bird.prototype.calcDistances = function () {
         this.upperDist = int(dist(this.x, this.y, this.topNextObstacle.x, this.topNextObstacle.y));
@@ -103,14 +129,17 @@ var Bird = (function () {
         pop();
     };
     Bird.prototype.hits = function (obstacle) {
+        if (this.y < 10 || this.y > height - 20) {
+            this.isAlive = false;
+            return true;
+        }
         if (this.y < obstacle.gapStart || this.y > obstacle.gapStart + obstacle.gapLength) {
             if (this.x > obstacle.x && this.x < obstacle.x + obstacle.w) {
                 this.isAlive = false;
-                console.log('dead');
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     };
     Bird.prototype.goUp = function () {
         this.velocity += this.lift;
@@ -119,10 +148,7 @@ var Bird = (function () {
         this.velocity += this.gravity;
         this.velocity *= 0.9;
         this.y += this.velocity;
-        if (this.y > height - 10) {
-            this.isAlive = false;
-            return;
-        }
+        this.score++;
         if (this.y > height) {
             this.y = height;
             this.velocity = 0;
@@ -151,29 +177,60 @@ var Bird = (function () {
     return Bird;
 }());
 var NeuralNetwork = (function () {
-    function NeuralNetwork(inputs, hidden, outputs) {
+    function NeuralNetwork(inputs, hidden, outputs, brain) {
+        if (brain === void 0) { brain = undefined; }
         this.inputNodes = inputs;
         this.hiddenNodes = hidden;
         this.outputNodes = outputs;
-        this.createModel();
+        if (brain) {
+            this.model = brain;
+        }
+        else {
+            this.model = this.createModel();
+        }
     }
     NeuralNetwork.prototype.copy = function () {
         var modelCopy = this.createModel();
         var weights = this.model.getWeights();
+        var weightCopies = [];
+        for (var i = 0; i < weights.length; i++) {
+            weightCopies[i] = weights[i].clone();
+        }
+        modelCopy.setWeights(weightCopies);
+        return new NeuralNetwork(this.inputNodes, this.hiddenNodes, this.outputNodes, modelCopy);
+    };
+    NeuralNetwork.prototype.mutate = function (rate) {
+        var weights = this.model.getWeights();
+        var mutatedWeights = [];
+        for (var i = 0; i < weights.length; i++) {
+            var tensor = weights[i];
+            var shape = weights[i].shape;
+            var values = tensor.dataSync().slice();
+            for (var j = 0; j < values.length; j++) {
+                if (random(1) < rate) {
+                    console.log('MUTATE HERE');
+                    var w = values[j];
+                    values[j] = w + randomGaussian(0, 1);
+                }
+            }
+            mutatedWeights[i] = tf.tensor(values, shape);
+        }
+        this.model.setWeights(mutatedWeights);
     };
     NeuralNetwork.prototype.createModel = function () {
-        this.model = tf.sequential();
+        var model = tf.sequential();
         var hidden = tf.layers.dense({
             units: this.hiddenNodes,
             inputDim: this.inputNodes,
             activation: 'sigmoid'
         });
-        this.model.add(hidden);
+        model.add(hidden);
         var output = tf.layers.dense({
             units: this.outputNodes,
             activation: 'softmax'
         });
-        this.model.add(output);
+        model.add(output);
+        return model;
     };
     NeuralNetwork.prototype.predict = function (inputs) {
         var xs = tf.tensor2d([inputs]);
@@ -233,4 +290,36 @@ var Obstacle = (function () {
     };
     return Obstacle;
 }());
+function nextGeneration() {
+    calculateFitness();
+    for (var i = 0; i < birdsAmount; i++) {
+        birds[i] = pickOne();
+    }
+    savedBirds = [];
+}
+function pickOne() {
+    var index = 0;
+    var r = random(1);
+    while (r > 0) {
+        r = r - savedBirds[index].fitness;
+        index++;
+    }
+    index--;
+    var bird = savedBirds[index];
+    console.log(bird.score);
+    var child = new Bird(bird.brain);
+    child.mutate();
+    return child;
+}
+function calculateFitness() {
+    var sum = 0;
+    for (var _i = 0, savedBirds_1 = savedBirds; _i < savedBirds_1.length; _i++) {
+        var bird = savedBirds_1[_i];
+        sum += bird.score;
+    }
+    for (var _a = 0, savedBirds_2 = savedBirds; _a < savedBirds_2.length; _a++) {
+        var bird = savedBirds_2[_a];
+        bird.fitness = bird.score / sum;
+    }
+}
 //# sourceMappingURL=../sketch/sketch/build.js.map

@@ -1,8 +1,11 @@
 let birds: Bird[] = [];
 let obstacles: Obstacle[] = [];
 let score = 0;
-const birdsAmount = 500;
-
+let savedBirds: Bird[] = [];
+const birdsAmount = 250;
+let counter = 0;
+let gen = 1;
+let best = 0;
 
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
@@ -17,7 +20,6 @@ function setup() {
         birds.push(new Bird());
     }
 
-    obstacles.push(new Obstacle())
 }
 
 function draw() {
@@ -25,18 +27,17 @@ function draw() {
     fill(0, 0, 255)
     textSize(20)
     textFont("Helvetica")
-    text('score: ' + score, 20, 20)
+    text('SCORE: ' + score, 20, 20)
+    text('BEST: ' + (best < score ? score : best), 20, 50)
+    text('ALIVE: ' + birds.length, 20, 80)
+    text('GEN: ' + gen, 20, 110)
 
-    if (frameCount % 100 == 0) {
+    if (counter % 100 == 0) {
         obstacles.push(new Obstacle())
     }
     for (let i = obstacles.length - 1; i >= 0; i-=1) {
-        obstacles[i].show();
         obstacles[i].update();
-        // if (obstacles[i].hits(bird)) {
-        //     obstaclesHit++
-        // }
-        //
+        obstacles[i].show();
         if (!obstacles[i].passed && obstacles[i].passesBird()) {
             score++;
         }
@@ -49,21 +50,32 @@ function draw() {
     for (let z=0; z<birds.length; z+=1){
 
         for (let i = obstacles.length - 1; i >= 0; i-=1) {
-            let isAlive = birds[z].hits(obstacles[i]);
+            birds[z].hits(obstacles[i]);
         }
+        birds[z].update();
         birds[z].updateNextObstacle(nextObstacle);
         birds[z].think();
-        birds[z].update();
         birds[z].show();
     }
 
-    birds = birds.filter(bird => bird.isAlive);
+    birds = birds.filter(bird => {
+        if(bird.isAlive){
+            return true
+        }else{
+            savedBirds.push(bird);
+            return false
+        }
+    });
 
-
-}
-
-function keyPressed() {
-    if (key === " ") {
-        birds[0].goUp()
+    if(birds.length === 0 || score >= 100){
+        console.log('next gen');
+        obstacles = [];
+        obstacles.push(new Obstacle());
+        best = score > best ? score : best;
+        score = 0;
+        counter = 0;
+        nextGeneration();
+        gen++;
     }
+    counter ++;
 }

@@ -2,8 +2,8 @@ class Bird {
     // @ts-ignore
     y = height / 2;
     x = 64;
-    gravity = 0.6;
-    lift = -19;
+    gravity = 0.8;
+    lift = -12;
     velocity = 0;
     isAlive = true;
     topNextObstacle = {x: 0, y: 0};
@@ -13,14 +13,15 @@ class Bird {
     bottomDist = 0;
     debug = false;
     brain: NeuralNetwork;
-
+    score = 0;
+    fitness = 0;
     constructor(brain: NeuralNetwork = undefined) {
         if(brain){
             this.brain = brain.copy();
         }else{
+            console.log('new brain');
             this.brain = new NeuralNetwork(5,8,2);
         }
-
     }
 
 
@@ -30,6 +31,9 @@ class Bird {
         stroke(255);
         fill(150,50);
         ellipse(this.x, this.y, 32, 32)
+    }
+    mutate(){
+        this.brain.mutate(0.03);
     }
 
     calcDistances(){
@@ -65,14 +69,17 @@ class Bird {
     }
 
     hits(obstacle: Obstacle) {
+        if(this.y < 10 || this.y > height - 20){
+            this.isAlive = false;
+            return true
+        }
         if (this.y < obstacle.gapStart || this.y > obstacle.gapStart + obstacle.gapLength) {
             if (this.x > obstacle.x && this.x < obstacle.x + obstacle.w) {
                 this.isAlive = false;
-                console.log('dead');
-                return false
+                return true
             }
         }
-        return true
+        return false
     }
 
     goUp() {
@@ -83,11 +90,7 @@ class Bird {
         this.velocity += this.gravity
         this.velocity *= 0.9
         this.y += this.velocity
-
-        if (this.y > height - 10) {
-            this.isAlive = false;
-            return
-        }
+        this.score++;
 
         if (this.y > height) {
             this.y = height
