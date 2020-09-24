@@ -6,6 +6,8 @@ const birdsAmount = 250;
 let counter = 0;
 let gen = 1;
 let best = 0;
+const autoKill = false;
+
 
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
@@ -67,7 +69,7 @@ function draw() {
         }
     });
 
-    if(birds.length === 0 || score >= 100){
+    if(birds.length === 0 || autoKill &&  score >= best + 50){
         console.log('next gen');
         obstacles = [];
         obstacles.push(new Obstacle());

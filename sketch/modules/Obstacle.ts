@@ -2,7 +2,7 @@ class Obstacle {
     x = width;
     w = 30
     topMin = 50
-    botMin = height/1.3
+    botMin = height/2
     gapStart = random(this.topMin, this.botMin)
     gapLength = 200
     speed = 3

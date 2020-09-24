@@ -56,7 +56,7 @@ function draw() {
             return false;
         }
     });
-    if (birds.length === 0 || score >= 100) {
+    if (birds.length === 0 || score >= best + 50) {
         console.log('next gen');
         obstacles = [];
         obstacles.push(new Obstacle());
@@ -244,7 +244,7 @@ var Obstacle = (function () {
         this.x = width;
         this.w = 30;
         this.topMin = 50;
-        this.botMin = height / 1.3;
+        this.botMin = height / 2;
         this.gapStart = random(this.topMin, this.botMin);
         this.gapLength = 200;
         this.speed = 3;
