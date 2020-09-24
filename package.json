@@ -13,7 +13,8 @@
     "@types/p5": "^0.9.0",
     "browser-sync": "^2.26.12",
     "npm-run-all": "^4.1.5",
-    "typescript": "^3.8.3"
+    "typescript": "^3.8.3",
+    "node-fetch": ">=2.6.1"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^2.4.0"
