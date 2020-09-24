@@ -6,6 +6,7 @@ var birdsAmount = 250;
 var counter = 0;
 var gen = 1;
 var best = 0;
+var autoKill = false;
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
     tf.setBackend('cpu');
@@ -46,6 +47,7 @@ function draw() {
         birds[z].updateNextObstacle(nextObstacle);
         birds[z].think();
         birds[z].show();
+        birds[z].debug = birds.length < 5;
     }
     birds = birds.filter(function (bird) {
         if (bird.isAlive) {
@@ -56,7 +58,7 @@ function draw() {
             return false;
         }
     });
-    if (birds.length === 0 || score >= best + 50) {
+    if (birds.length === 0 || autoKill && score >= best + 50) {
         console.log('next gen');
         obstacles = [];
         obstacles.push(new Obstacle());
@@ -101,7 +103,7 @@ var Bird = (function () {
         ellipse(this.x, this.y, 32, 32);
     };
     Bird.prototype.mutate = function () {
-        this.brain.mutate(0.03);
+        this.brain.mutate(0.2);
     };
     Bird.prototype.calcDistances = function () {
         this.upperDist = int(dist(this.x, this.y, this.topNextObstacle.x, this.topNextObstacle.y));
@@ -109,6 +111,8 @@ var Bird = (function () {
         this.bottomDist = int(dist(this.x, this.y, this.x, height));
     };
     Bird.prototype.drawDistances = function () {
+        fill(10, 20, 250);
+        stroke(10, 20, 250);
         line(this.x, this.y, this.bottomNextObstacle.x, this.bottomNextObstacle.y);
         line(this.x, this.y, this.topNextObstacle.x, this.topNextObstacle.y);
         line(this.x, this.y, this.x, height);

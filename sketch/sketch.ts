@@ -58,6 +58,7 @@ function draw() {
         birds[z].updateNextObstacle(nextObstacle);
         birds[z].think();
         birds[z].show();
+        birds[z].debug = birds.length < 5;
     }
 
     birds = birds.filter(bird => {

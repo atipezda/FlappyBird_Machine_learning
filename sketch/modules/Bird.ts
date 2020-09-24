@@ -33,7 +33,7 @@ class Bird {
         ellipse(this.x, this.y, 32, 32)
     }
     mutate(){
-        this.brain.mutate(0.03);
+        this.brain.mutate(0.2);
     }
 
     calcDistances(){
@@ -44,6 +44,8 @@ class Bird {
 
     drawDistances() {
 
+        fill(10,20,250);
+        stroke(10,20,250);
         line(this.x, this.y, this.bottomNextObstacle.x, this.bottomNextObstacle.y);
         line(this.x, this.y, this.topNextObstacle.x, this.topNextObstacle.y);
         line(this.x, this.y, this.x, height);
